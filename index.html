@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Journal">
+<meta name="theme-color" content="#0f0f0f">
+<title>Daily Journal</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: #0f0f0f;
+  color: #e0e0e0;
+  min-height: 100%;
+  padding: 16px;
+  padding-top: env(safe-area-inset-top, 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 80px);
+  max-width: 480px;
+  margin: 0 auto;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 16px 0 8px;
+}
+.header h1 {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: #fff;
+}
+.header .date {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* Mode toggle */
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.mode-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-btn.active {
+  background: #222;
+  color: #fff;
+  border-color: #444;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  margin: 12px 0;
+  background: #1a1a1a;
+  border-radius: 14px;
+  padding: 4px;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 400;
+  color: #666;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  user-select: none;
+}
+.tab.active {
+  color: #fff;
+  font-weight: 500;
+}
+.tab[data-type="morning"].active { background: #2a1f0a; color: #f0a030; }
+.tab[data-type="sns"].active { background: #0a1f2a; color: #30a0f0; }
+.tab[data-type="night"].active { background: #1a0a2a; color: #a070e0; }
+
+/* Time hint */
+.time-hint {
+  text-align: center;
+  font-size: 11px;
+  color: #444;
+  margin-bottom: 12px;
+}
+
+/* Form */
+.form-section {
+  display: none;
+  animation: fadeIn 0.15s ease;
+}
+.form-section.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Quick mode */
+.quick-form {
+  display: none;
+}
+.quick-form.active { display: block; }
+.detail-form { display: block; }
+.detail-form.hidden { display: none; }
+
+.quick-card {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.quick-card .quick-label {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 12px;
+}
+.quick-moods {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.quick-mood {
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+  background: #111;
+  border: 2px solid #2a2a2a;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quick-mood:active {
+  transform: scale(0.92);
+}
+.quick-mood.selected {
+  border-color: #555;
+  background: #222;
+  transform: scale(1.08);
+}
+.quick-textarea {
+  width: 100%;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 14px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 16px;
+  resize: none;
+  min-height: 60px;
+  transition: border-color 0.2s;
+  margin-top: 12px;
+}
+.quick-textarea:focus {
+  outline: none;
+  border-color: #444;
+}
+.quick-textarea::placeholder { color: #444; }
+
+/* Detail form card */
+.form-card {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+.form-card .icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+.form-card label {
+  display: block;
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+.form-card textarea {
+  width: 100%;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 14px;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 16px;
+  resize: none;
+  min-height: 72px;
+  transition: border-color 0.2s;
+}
+.form-card textarea:focus {
+  outline: none;
+  border-color: #444;
+}
+.form-card textarea::placeholder { color: #444; }
+
+/* Mood selector */
+.mood-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.mood-btn {
+  flex: 1;
+  padding: 14px 0;
+  font-size: 24px;
+  background: #111;
+  border: 2px solid #2a2a2a;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.mood-btn:active { transform: scale(0.93); }
+.mood-btn.selected {
+  border-color: #555;
+  background: #222;
+  transform: scale(1.05);
+}
+
+/* Score slider */
+.score-container {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+.score-container input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  outline: none;
+}
+.score-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.score-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Submit */
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #fff;
+  margin-top: 4px;
+}
+.submit-btn:active { transform: scale(0.97); opacity: 0.9; }
+.submit-btn.morning { background: linear-gradient(135deg, #f0a030, #e07020); }
+.submit-btn.sns { background: linear-gradient(135deg, #30a0f0, #2070d0); }
+.submit-btn.night { background: linear-gradient(135deg, #a070e0, #7040c0); }
+
+/* Success animation */
+@keyframes successPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.success-flash {
+  animation: successPop 0.3s ease;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #2a2a2a;
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 100;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid #1a1a1a;
+  margin: 20px 0;
+}
+
+/* History */
+.history-toggle {
+  width: 100%;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #666;
+  background: #1a1a1a;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: color 0.2s;
+}
+.history-toggle:active { color: #aaa; }
+
+.history-section {
+  display: none;
+}
+.history-section.open { display: block; }
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.history-header h2 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+}
+.export-btns {
+  display: flex;
+  gap: 8px;
+}
+.export-btn {
+  padding: 8px 14px;
+  font-size: 12px;
+  background: #222;
+  border: 1px solid #333;
+  color: #888;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.export-btn:active { color: #fff; border-color: #555; }
+
+.entry {
+  background: #1a1a1a;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+}
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.entry-type {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.entry-type.morning { background: #2a1f0a; color: #f0a030; }
+.entry-type.sns { background: #0a1f2a; color: #30a0f0; }
+.entry-type.night { background: #1a0a2a; color: #a070e0; }
+.entry-date {
+  font-size: 11px;
+  color: #555;
+}
+.entry-mood {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+.entry-text {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.6;
+}
+.entry-score {
+  font-size: 11px;
+  color: #555;
+  margin-top: 4px;
+}
+.entry-delete {
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 8px;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+.entry-delete:active { color: #e04040; }
+
+.empty-state {
+  text-align: center;
+  padding: 32px 0;
+  color: #444;
+  font-size: 13px;
+}
+
+.stats-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  flex: 1;
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-card .num {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+.stat-card .label {
+  font-size: 10px;
+  color: #555;
+  margin-top: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>DAILY JOURNAL</h1>
+  <div class="date" id="todayDate"></div>
+</div>
+
+<!-- Mode toggle -->
+<div class="mode-toggle">
+  <button class="mode-btn active" id="modeQuick" onclick="setMode('quick')">Quick</button>
+  <button class="mode-btn" id="modeDetail" onclick="setMode('detail')">Detail</button>
+</div>
+
+<!-- Tabs -->
+<div class="tabs" id="tabsContainer">
+  <button class="tab active" data-type="morning" onclick="switchTab('morning')">&#x1F305; 朝</button>
+  <button class="tab" data-type="sns" onclick="switchTab('sns')">&#x1F4F1; SNS</button>
+  <button class="tab" data-type="night" onclick="switchTab('night')">&#x1F319; 夜</button>
+</div>
+
+<div class="time-hint" id="timeHint"></div>
+
+<!-- ===== MORNING ===== -->
+<div class="form-section active" id="form-morning">
+  <!-- Quick -->
+  <div class="quick-form active" id="quick-morning">
+    <div class="quick-card">
+      <div class="quick-label">今朝の気分は？</div>
+      <div class="quick-moods" id="qmood-morning">
+        <button class="quick-mood" onclick="quickMood('morning','great',this)">&#x1F60A;</button>
+        <button class="quick-mood" onclick="quickMood('morning','good',this)">&#x1F642;</button>
+        <button class="quick-mood" onclick="quickMood('morning','normal',this)">&#x1F610;</button>
+        <button class="quick-mood" onclick="quickMood('morning','low',this)">&#x1F614;</button>
+        <button class="quick-mood" onclick="quickMood('morning','bad',this)">&#x1F629;</button>
+      </div>
+      <textarea class="quick-textarea" id="qtext-morning" placeholder="ひとこと (任意)" rows="2"></textarea>
+    </div>
+    <button class="submit-btn morning" onclick="submitQuick('morning')">記録する</button>
+  </div>
+  <!-- Detail -->
+  <div class="detail-form hidden" id="detail-morning">
+    <div class="form-card">
+      <div class="icon">&#x1F305;</div>
+      <label>今朝の気分は？</label>
+      <div class="mood-row" id="mood-morning">
+        <button class="mood-btn" data-mood="great" onclick="selectMood('morning','great',this)">&#x1F60A;</button>
+        <button class="mood-btn" data-mood="good" onclick="selectMood('morning','good',this)">&#x1F642;</button>
+        <button class="mood-btn" data-mood="normal" onclick="selectMood('morning','normal',this)">&#x1F610;</button>
+        <button class="mood-btn" data-mood="low" onclick="selectMood('morning','low',this)">&#x1F614;</button>
+        <button class="mood-btn" data-mood="bad" onclick="selectMood('morning','bad',this)">&#x1F629;</button>
+      </div>
+    </div>
+    <div class="form-card">
+      <label>起きて最初に感じたこと</label>
+      <textarea id="text-morning" placeholder="頭に浮かんだことをそのまま..."></textarea>
+    </div>
+    <div class="form-card">
+      <label>今日のエネルギーレベル (1-10)</label>
+      <div class="score-container">
+        <input type="range" min="1" max="10" value="5" id="score-morning" oninput="updateScore('morning')">
+        <span class="score-value" id="scoreVal-morning">5</span>
+      </div>
+    </div>
+    <button class="submit-btn morning" onclick="submitDetail('morning')">記録する</button>
+  </div>
+</div>
+
+<!-- ===== SNS ===== -->
+<div class="form-section" id="form-sns">
+  <!-- Quick -->
+  <div class="quick-form active" id="quick-sns">
+    <div class="quick-card">
+      <div class="quick-label">SNSを見てどう感じた？</div>
+      <div class="quick-moods" id="qmood-sns">
+        <button class="quick-mood" onclick="quickMood('sns','inspired',this)">&#x2728;</button>
+        <button class="quick-mood" onclick="quickMood('sns','neutral',this)">&#x1F610;</button>
+        <button class="quick-mood" onclick="quickMood('sns','comparison',this)">&#x1F625;</button>
+        <button class="quick-mood" onclick="quickMood('sns','anxious',this)">&#x1F630;</button>
+      </div>
+      <textarea class="quick-textarea" id="qtext-sns" placeholder="ひとこと (任意)" rows="2"></textarea>
+    </div>
+    <button class="submit-btn sns" onclick="submitQuick('sns')">記録する</button>
+  </div>
+  <!-- Detail -->
+  <div class="detail-form hidden" id="detail-sns">
+    <div class="form-card">
+      <div class="icon">&#x1F4F1;</div>
+      <label>SNSを見てどう感じた？</label>
+      <div class="mood-row" id="mood-sns">
+        <button class="mood-btn" data-mood="inspired" onclick="selectMood('sns','inspired',this)">&#x2728;</button>
+        <button class="mood-btn" data-mood="neutral" onclick="selectMood('sns','neutral',this)">&#x1F610;</button>
+        <button class="mood-btn" data-mood="comparison" onclick="selectMood('sns','comparison',this)">&#x1F625;</button>
+        <button class="mood-btn" data-mood="anxious" onclick="selectMood('sns','anxious',this)">&#x1F630;</button>
+      </div>
+    </div>
+    <div class="form-card">
+      <label>何を見て、何を感じた？</label>
+      <textarea id="text-sns" placeholder="タイムラインで気になったこと..."></textarea>
+    </div>
+    <div class="form-card">
+      <label>SNS後の気分スコア (1-10)</label>
+      <div class="score-container">
+        <input type="range" min="1" max="10" value="5" id="score-sns" oninput="updateScore('sns')">
+        <span class="score-value" id="scoreVal-sns">5</span>
+      </div>
+    </div>
+    <button class="submit-btn sns" onclick="submitDetail('sns')">記録する</button>
+  </div>
+</div>
+
+<!-- ===== NIGHT ===== -->
+<div class="form-section" id="form-night">
+  <!-- Quick -->
+  <div class="quick-form active" id="quick-night">
+    <div class="quick-card">
+      <div class="quick-label">今日一日の気分は？</div>
+      <div class="quick-moods" id="qmood-night">
+        <button class="quick-mood" onclick="quickMood('night','fulfilled',this)">&#x1F31F;</button>
+        <button class="quick-mood" onclick="quickMood('night','calm',this)">&#x1F60C;</button>
+        <button class="quick-mood" onclick="quickMood('night','tired',this)">&#x1F634;</button>
+        <button class="quick-mood" onclick="quickMood('night','stressed',this)">&#x1F62B;</button>
+      </div>
+      <textarea class="quick-textarea" id="qtext-night" placeholder="ひとこと (任意)" rows="2"></textarea>
+    </div>
+    <button class="submit-btn night" onclick="submitQuick('night')">記録する</button>
+  </div>
+  <!-- Detail -->
+  <div class="detail-form hidden" id="detail-night">
+    <div class="form-card">
+      <div class="icon">&#x1F319;</div>
+      <label>今日一日の気分は？</label>
+      <div class="mood-row" id="mood-night">
+        <button class="mood-btn" data-mood="fulfilled" onclick="selectMood('night','fulfilled',this)">&#x1F31F;</button>
+        <button class="mood-btn" data-mood="calm" onclick="selectMood('night','calm',this)">&#x1F60C;</button>
+        <button class="mood-btn" data-mood="tired" onclick="selectMood('night','tired',this)">&#x1F634;</button>
+        <button class="mood-btn" data-mood="stressed" onclick="selectMood('night','stressed',this)">&#x1F62B;</button>
+      </div>
+    </div>
+    <div class="form-card">
+      <label>今日一番心に残ったこと</label>
+      <textarea id="text-night" placeholder="印象的だった出来事や気づき..."></textarea>
+    </div>
+    <div class="form-card">
+      <label>明日への一言</label>
+      <textarea id="text-night-tomorrow" placeholder="明日の自分に伝えたいこと..." style="min-height:50px"></textarea>
+    </div>
+    <div class="form-card">
+      <label>今日の充実度 (1-10)</label>
+      <div class="score-container">
+        <input type="range" min="1" max="10" value="5" id="score-night" oninput="updateScore('night')">
+        <span class="score-value" id="scoreVal-night">5</span>
+      </div>
+    </div>
+    <button class="submit-btn night" onclick="submitDetail('night')">記録する</button>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="num" id="stat-total">0</div>
+    <div class="label">記録数</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="stat-streak">0</div>
+    <div class="label">連続日数</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" id="stat-avg">-</div>
+    <div class="label">平均スコア</div>
+  </div>
+</div>
+
+<!-- History toggle -->
+<button class="history-toggle" id="historyToggle" onclick="toggleHistory()">記録一覧を見る ▼</button>
+
+<div class="history-section" id="historySection">
+  <div class="history-header">
+    <h2>記録一覧</h2>
+    <div class="export-btns">
+      <button class="export-btn" onclick="exportJSON()">JSON</button>
+      <button class="export-btn" onclick="exportCSV()">CSV</button>
+    </div>
+  </div>
+  <div id="historyList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ★ ここにGoogle Apps ScriptのURLを貼り付け
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzcWlPVDQ5RAATvHWkTtm_7jbEuHDvBbjAQbBKuw8KXNPgVBtKVQZVv8_jM3JSes6Sy/exec';
+
+const STORAGE_KEY = 'daily_journal_entries';
+let selectedMoods = { morning: null, sns: null, night: null };
+let quickMoods = { morning: null, sns: null, night: null };
+let currentMode = 'quick';
+
+// Google Sheets に送信
+function sendToSheets(entry) {
+  if (!GAS_URL) return;
+  fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entry)
+  }).catch(() => {});
+}
+
+function init() {
+  const now = new Date();
+  const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' };
+  document.getElementById('todayDate').textContent = now.toLocaleDateString('ja-JP', options);
+
+  // Auto-select tab based on time
+  const h = now.getHours();
+  if (h >= 5 && h < 11) {
+    switchTab('morning');
+  } else if (h >= 11 && h < 20) {
+    switchTab('sns');
+  } else {
+    switchTab('night');
+  }
+
+  updateTimeHint();
+  renderHistory();
+  updateStats();
+
+  // Touch swipe for tabs
+  let touchStartX = 0;
+  const types = ['morning', 'sns', 'night'];
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const diff = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(diff) < 60) return;
+    const current = types.indexOf(document.querySelector('.tab.active').dataset.type);
+    if (diff < 0 && current < 2) switchTab(types[current + 1]);
+    if (diff > 0 && current > 0) switchTab(types[current - 1]);
+  }, { passive: true });
+}
+
+function updateTimeHint() {
+  const h = new Date().getHours();
+  const el = document.getElementById('timeHint');
+  if (h >= 5 && h < 11) el.textContent = 'おはようございます';
+  else if (h >= 11 && h < 17) el.textContent = '';
+  else if (h >= 17 && h < 21) el.textContent = '';
+  else el.textContent = 'おつかれさまでした';
+}
+
+// Mode
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeQuick').classList.toggle('active', mode === 'quick');
+  document.getElementById('modeDetail').classList.toggle('active', mode === 'detail');
+
+  ['morning', 'sns', 'night'].forEach(type => {
+    document.getElementById(`quick-${type}`).classList.toggle('active', mode === 'quick');
+    document.getElementById(`detail-${type}`).classList.toggle('hidden', mode === 'quick');
+    if (mode === 'detail') {
+      document.getElementById(`quick-${type}`).classList.remove('active');
+      document.getElementById(`detail-${type}`).classList.remove('hidden');
+    }
+  });
+}
+
+// Tab
+function switchTab(type) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-type="${type}"]`).classList.add('active');
+  document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+  document.getElementById(`form-${type}`).classList.add('active');
+}
+
+// Quick mood
+function quickMood(type, mood, btn) {
+  document.querySelectorAll(`#qmood-${type} .quick-mood`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  quickMoods[type] = mood;
+}
+
+// Detail mood
+function selectMood(type, mood, btn) {
+  document.querySelectorAll(`#mood-${type} .mood-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedMoods[type] = mood;
+}
+
+function updateScore(type) {
+  document.getElementById(`scoreVal-${type}`).textContent = document.getElementById(`score-${type}`).value;
+}
+
+// Storage
+function getEntries() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+function saveEntries(entries) { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+
+// Quick submit
+function submitQuick(type) {
+  const mood = quickMoods[type];
+  const text = document.getElementById(`qtext-${type}`).value.trim();
+  if (!mood && !text) { showToast('気分を選んでください'); return; }
+
+  const entry = { id: Date.now(), type, mood, text, score: null, timestamp: new Date().toISOString() };
+  const entries = getEntries();
+  entries.unshift(entry);
+  saveEntries(entries);
+  sendToSheets(entry);
+
+  // Reset
+  document.getElementById(`qtext-${type}`).value = '';
+  document.querySelectorAll(`#qmood-${type} .quick-mood`).forEach(b => b.classList.remove('selected'));
+  quickMoods[type] = null;
+
+  // Blur keyboard
+  document.activeElement.blur();
+
+  renderHistory();
+  updateStats();
+  showToast('記録しました ✓');
+
+  // Haptic feedback if available
+  if (navigator.vibrate) navigator.vibrate(30);
+}
+
+// Detail submit
+function submitDetail(type) {
+  const mood = selectedMoods[type];
+  const text = document.getElementById(`text-${type}`).value.trim();
+  const score = parseInt(document.getElementById(`score-${type}`).value);
+  if (!mood && !text) { showToast('気分かテキストを入力してください'); return; }
+
+  const entry = { id: Date.now(), type, mood, text, score, timestamp: new Date().toISOString() };
+  if (type === 'night') entry.tomorrow = document.getElementById('text-night-tomorrow').value.trim();
+
+  const entries = getEntries();
+  entries.unshift(entry);
+  saveEntries(entries);
+  sendToSheets(entry);
+
+  // Reset
+  document.getElementById(`text-${type}`).value = '';
+  if (type === 'night') document.getElementById('text-night-tomorrow').value = '';
+  document.getElementById(`score-${type}`).value = 5;
+  document.getElementById(`scoreVal-${type}`).textContent = '5';
+  document.querySelectorAll(`#mood-${type} .mood-btn`).forEach(b => b.classList.remove('selected'));
+  selectedMoods[type] = null;
+  document.activeElement.blur();
+
+  renderHistory();
+  updateStats();
+  showToast('記録しました ✓');
+  if (navigator.vibrate) navigator.vibrate(30);
+}
+
+// Mood labels
+const moodLabels = {
+  great: '😊', good: '🙂', normal: '😐', low: '😔', bad: '😩',
+  inspired: '✨', neutral: '😐', comparison: '😥', anxious: '😰',
+  fulfilled: '🌟', calm: '😌', tired: '😴', stressed: '😫'
+};
+const typeLabels = { morning: '朝', sns: 'SNS', night: '夜' };
+
+function renderHistory() {
+  const entries = getEntries();
+  const list = document.getElementById('historyList');
+  if (!entries.length) { list.innerHTML = '<div class="empty-state">まだ記録がありません</div>'; return; }
+
+  list.innerHTML = entries.slice(0, 50).map(e => {
+    const d = new Date(e.timestamp);
+    const ds = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const mood = e.mood ? `<div class="entry-mood">${moodLabels[e.mood]||e.mood}</div>` : '';
+    const text = e.text ? `<div class="entry-text">${esc(e.text)}</div>` : '';
+    const tmrw = e.tomorrow ? `<div class="entry-text" style="margin-top:4px;color:#666;">→ ${esc(e.tomorrow)}</div>` : '';
+    const score = e.score ? `<div class="entry-score">スコア: ${e.score}/10</div>` : '';
+    return `<div class="entry"><div class="entry-header"><span class="entry-type ${e.type}">${typeLabels[e.type]}</span><span><span class="entry-date">${ds}</span><button class="entry-delete" onclick="deleteEntry(${e.id})">✕</button></span></div>${mood}${text}${tmrw}${score}</div>`;
+  }).join('');
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function deleteEntry(id) {
+  saveEntries(getEntries().filter(e => e.id !== id));
+  renderHistory(); updateStats();
+  showToast('削除しました');
+}
+
+function updateStats() {
+  const entries = getEntries();
+  document.getElementById('stat-total').textContent = entries.length;
+  const scores = entries.filter(e => e.score).map(e => e.score);
+  document.getElementById('stat-avg').textContent = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : '-';
+  const days = new Set(entries.map(e => new Date(e.timestamp).toDateString()));
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    if (days.has(d.toDateString())) streak++; else break;
+  }
+  document.getElementById('stat-streak').textContent = streak;
+}
+
+// History toggle
+function toggleHistory() {
+  const s = document.getElementById('historySection');
+  const b = document.getElementById('historyToggle');
+  const open = s.classList.toggle('open');
+  b.textContent = open ? '記録一覧を閉じる ▲' : '記録一覧を見る ▼';
+}
+
+// Export
+function exportJSON() {
+  const e = getEntries();
+  if (!e.length) { showToast('データがありません'); return; }
+  dl(new Blob([JSON.stringify(e, null, 2)], { type: 'application/json' }), `journal_${fdate()}.json`);
+}
+function exportCSV() {
+  const e = getEntries();
+  if (!e.length) { showToast('データがありません'); return; }
+  const h = 'timestamp,type,mood,score,text,tomorrow\n';
+  const r = e.map(x => `"${x.timestamp}","${x.type}","${x.mood||''}",${x.score||''},"${(x.text||'').replace(/"/g,'""')}","${(x.tomorrow||'').replace(/"/g,'""')}"`).join('\n');
+  dl(new Blob([h+r], { type: 'text/csv' }), `journal_${fdate()}.csv`);
+}
+function dl(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href); }
+function fdate() { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`; }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+init();
+</script>
+</body>
+</html>
